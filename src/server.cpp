@@ -6,6 +6,7 @@
 
 void Server::Start() {
     int sock = CreateSocket(port_);
+    Print("Server listen on %d...\n", port_);
     for (;;) {
         int newsock = AcceptConnection(sock);
         std::thread t(&Server::NewConnection, this, newsock);
