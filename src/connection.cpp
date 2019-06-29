@@ -18,7 +18,7 @@ void GenPort(Port *port)
 }
 
 void Connection::Run() {
-	SendMessage("220 Welcome to ftp service built by dafeng & shukui. \n");
+	SendMessage("220 Welcome to ftp service built by dafeng & shukui. \r\n");
 	char buffer[kBufferSize] = {0};
 
 	while (status_ != kClosed) {
@@ -69,7 +69,7 @@ void Connection::Response(const Command& cmd) {
     case STOR: FtpStor(arg); break;
   	case TYPE: FtpType(arg); break;
   	case USER: FtpUser(arg); break;		
-		default: SendMessage("500 Unknown command\n");
+		default: SendMessage("500 Unknown command\r\n");
 	}
 }
 
@@ -83,35 +83,35 @@ void Connection::SendMessage(const char* message) {
  */
 void Connection::FtpAbor(const char* arg) {
   if (!logged_in_) {
-    SendMessage("530 Please login with USER and PASS.\n");
+    SendMessage("530 Please login with USER and PASS.\r\n");
     return;
   }
-  SendMessage("226 Closing data connection.\n");
+  SendMessage("226 Closing data connection.\r\n");
 }
 
 /** CWD command */
 void Connection::FtpCwd(const char* arg) {
   if(logged_in_) {
     if(chdir(arg) == 0){
-      SendMessage("250 Directory successfully changed.\n");
+      SendMessage("250 Directory successfully changed.\r\n");
     } else {
-      SendMessage("550 Failed to change directory.\n");
+      SendMessage("550 Failed to change directory.\r\n");
     }
   } else {
-		SendMessage("530 Please login with USER and PASS.\n");
+		SendMessage("530 Please login with USER and PASS.\r\n");
 	}
 }
 
 /** DELE command */
 void Connection::FtpDele(const char* arg) {
   if (!logged_in_) {
-    SendMessage("530 Please login with USER and PASS.\n");
+    SendMessage("530 Please login with USER and PASS.\r\n");
     return;
   }
   if(unlink(arg) == -1) {
-    SendMessage("550 File unavailable.\n");
+    SendMessage("550 File unavailable.\r\n");
   } else {
-    SendMessage("250 Requested file action okay, completed.\n");
+    SendMessage("250 Requested file action okay, completed.\r\n");
   }
 }
 
@@ -130,11 +130,11 @@ void Connection::FtpList(const char* arg) {
     getcwd(current_dir, kBufferSize);
     DIR *dir = opendir(current_dir);
     if(!dir){
-      SendMessage("550 Failed to open directory.\n");
+      SendMessage("550 Failed to open directory.\r\n");
     }else{
       if(mode_ == kServer){
         int data_connection = AcceptConnection(sock_pasv_);
-        SendMessage("150 Here comes the directory listing.\n");
+        SendMessage("150 Here comes the directory listing.\r\n");
 				dirent *entry;
         while(entry = readdir(dir)) {
 					struct stat statbuf;
@@ -159,28 +159,28 @@ void Connection::FtpList(const char* arg) {
                 entry->d_name);
           }
         }        
-        SendMessage("226 Directory send OK.\n");
+        SendMessage("226 Directory send OK.\r\n");
         mode_ = kNormal;
         close(data_connection);
         close(sock_pasv_);
 				sock_pasv_ = -1;
       } else if(mode_ == kClient) {
-        SendMessage("502 PORT mode not implemented.\n");
+        SendMessage("502 PORT mode not implemented.\r\n");
       } else {
-        SendMessage("425 Use PASV or PORT first.\n");
+        SendMessage("425 Use PASV or PORT first.\r\n");
       }
     }
     closedir(dir);
     chdir(original_dir);
   } else {
-    SendMessage("530 Please login with USER and PASS.\n");
+    SendMessage("530 Please login with USER and PASS.\r\n");
   }
   mode_ = kNormal;
 }
 
 /** MDTM command */
 void Connection::FtpMdtm(const char* arg) {
-  SendMessage("502 MDTM command not implemented yet\n");
+  SendMessage("502 MDTM command not implemented yet\r\n");
 }
 
 /** MKD command */
@@ -194,42 +194,42 @@ void Connection::FtpMkd(const char* arg) {
     if(arg[0] == '/') { /* Absolute path */
       if(mkdir(arg, S_IRWXU) == 0) {		
 				char result[kBufferSize + 20] = {0};
-				sprintf(result, "257 \"%s\" new directory created.\n", arg);
+				sprintf(result, "257 \"%s\" new directory created.\r\n", arg);
         SendMessage(result);
       } else {
-        SendMessage("550 Failed to create directory. Check path or permissions.\n");
+        SendMessage("550 Failed to create directory. Check path or permissions.\r\n");
       }
     } else { /* Relative path */
       if(mkdir(arg, S_IRWXU) == 0) {
 				char result[kBufferSize + 20] = {0};
-        sprintf(result,"257 \"%s/%s\" new directory created.\n", current_dir, arg);
+        sprintf(result,"257 \"%s/%s\" new directory created.\r\n", current_dir, arg);
         SendMessage(result);
       }else{
-        SendMessage("550 Failed to create directory. Check path or permissions.\n");
+        SendMessage("550 Failed to create directory. Check path or permissions.\r\n");
       }
     }
   } else {
-    SendMessage("530 Please login with USER and PASS.\n");
+    SendMessage("530 Please login with USER and PASS.\r\n");
   }
 }
 
 /** NLST command*/
 void Connection::FtpNlst(const char* arg) {
-  SendMessage("502 NLST command not implemented yet\n");
+  SendMessage("502 NLST command not implemented yet\r\n");
 }
 
 /** Noop command*/
 void Connection::FtpNoop(const char* arg) {
-	SendMessage("200 Nice to NOOP you!\n");
+	SendMessage("200 Nice to NOOP you!\r\n");
 }
 
 /** PASS command */
 void Connection::FtpPass(const char* arg) {
   if(strlen(username_) > 0){
     logged_in_ = true;
-    SendMessage("230 Login successful\n");
+    SendMessage("230 Login successful\r\n");
   } else {
-    SendMessage("500 Invalid username or password\n");
+    SendMessage("500 Invalid username or password\r\n");
   }
 }
 
@@ -248,20 +248,20 @@ void Connection::FtpPasv(const char* arg) {
     /* Start listening here, but don't accept the connection */
     sock_pasv_ = CreateSocket(256 * port.p1 + port.p2);
 		char buff[255];
-    sprintf(buff, "227 Entering Passive Mode (%d,%d,%d,%d,%d,%d)\n",
+    sprintf(buff, "227 Entering Passive Mode (%d,%d,%d,%d,%d,%d)\r\n",
 						ip[0], ip[1], ip[2], ip[3], port.p1, port.p2);
     SendMessage(buff);
 		Print("%s\n", buff);
     mode_ = kServer;
 	}
 	else {
-		SendMessage("530 Please login with USER and PASS.\n");
+		SendMessage("530 Please login with USER and PASS.\r\n");
 	}
 }
 
 /** PORT command */
 void Connection::FtpPort(const char* arg) {
-  SendMessage("502 PORT command not implemented yet\n");
+  SendMessage("502 PORT command not implemented yet\r\n");
 }
 
 /** PWD command */
@@ -271,26 +271,26 @@ void Connection::FtpPwd(const char* arg) {
     char result[kBufferSize];
     memset(result, 0, kBufferSize);
     if (getcwd(current_dir, kBufferSize) != NULL){
-			sprintf(result, "257 \"%s\"\n", current_dir);
+			sprintf(result, "257 \"%s\"\r\n", current_dir);
       SendMessage(result);
     } else {
       SendMessage("550 Failed to get pwd.\n");
     }
   } else {
-		SendMessage("530 Please login with USER and PASS.\n");
+		SendMessage("530 Please login with USER and PASS.\r\n");
 	}
 }
 
 /** QUIT command */
 void Connection::FtpQuit(const char* arg) {
-  SendMessage("221 Goodbye, friend. Have a good night.\n");
+  SendMessage("221 Goodbye, friend. Have a good night.\r\n");
 	status_ = kClosed;
 }
 
 /** RETR command */
 void Connection::FtpRetr(const char* arg) {
   if (!logged_in_) {
-    SendMessage("530 Please login with USER and PASS.\n");
+    SendMessage("530 Please login with USER and PASS.\r\n");
     return;
   }	
 
@@ -299,87 +299,87 @@ void Connection::FtpRetr(const char* arg) {
     if(access(arg,R_OK) == 0 && (fd = open(arg,O_RDONLY))) {
       struct stat stat_buf;
       fstat(fd, &stat_buf);				
-      SendMessage("150 Opening BINARY mode data connection.\n");		
+      SendMessage("150 Opening BINARY mode data connection.\r\n");		
       int data_connection = AcceptConnection(sock_pasv_);
       close(sock_pasv_);
       off_t offset = 0;
       int sent_total = SendFile(data_connection, fd, &offset, stat_buf.st_size);
       if(sent_total == stat_buf.st_size) {
-        SendMessage("226 File send OK.\n");
+        SendMessage("226 File send OK.\r\n");
       } else if (sent_total == 0) {
-        SendMessage("550 Failed to read file.\n");
+        SendMessage("550 Failed to read file.\r\n");
       } else {
-        SendMessage("550 Failed to send file.\n");
+        SendMessage("550 Failed to send file.\r\n");
       }
       close(fd);
       close(data_connection);
     } else {
-      SendMessage("550 Failed to get file\n");
+      SendMessage("550 Failed to get file\r\n");
     }
   } else if (mode_ == kClient) {
-    SendMessage("550 Please use PASV instead of PORT.\n");
+    SendMessage("550 Please use PASV instead of PORT.\r\n");
   } else {
-    SendMessage("425 Use PASV or PORT first.\n");
+    SendMessage("425 Use PASV or PORT first.\r\n");
   }
 }
 
 /** RMD Command*/
 void Connection::FtpRmd(const char* arg) {
   if (!logged_in_) {
-    SendMessage("530 Please login with USER and PASS.\n");
+    SendMessage("530 Please login with USER and PASS.\r\n");
     return;
   }
   if(rmdir(arg) == 0) {
-    SendMessage("250 Requested file action okay, completed.\n");
+    SendMessage("250 Requested file action okay, completed.\r\n");
   } else {
-    SendMessage("550 Cannot delete directory.\n");
+    SendMessage("550 Cannot delete directory.\r\n");
   }
 }
 
 /** RNFR command */
 void Connection::FtpRnfr(const char* arg) {
-  SendMessage("502 RNFR command not implemented yet\n");
+  SendMessage("502 RNFR command not implemented yet\r\n");
 }
 
 /** RNTO command */
 void Connection::FtpRnto(const char* arg) {
-  SendMessage("502 RNTO command not implemented yet\n");
+  SendMessage("502 RNTO command not implemented yet\r\n");
 }
 
 /** SITE command */
 void Connection::FtpSite(const char* arg) {
-  SendMessage("502 SITE command not implemented yet\n");
+  SendMessage("502 SITE command not implemented yet\r\n");
 }
 
 /** SIZE command*/
 void Connection::FtpSize(const char* arg) {
   if (!logged_in_) {
-    SendMessage("530 Please login with USER and PASS.\n");
+    SendMessage("530 Please login with USER and PASS.\r\n");
     return;
   }
   struct stat statbuf;
   char filesize[128] = {0};
   if(stat(arg, &statbuf) == 0) { /* Success */
-    sprintf(filesize, "213 %ld\n", statbuf.st_size);
+    sprintf(filesize, "213 %ld\r\n", statbuf.st_size);
     SendMessage(filesize);
   } else {
-    SendMessage("550 Could not get file size.\n");
+    SendMessage("550 Could not get file size.\r\n");
   }
 }
 
 /** STOR command */
 void Connection::FtpStor(const char* arg) {
   if (!logged_in_) {
-    SendMessage("530 Please login with USER and PASS.\n");
+    SendMessage("530 Please login with USER and PASS.\r\n");
     return;
   } 
   if (mode_ == kNormal) {
-    SendMessage("425 Use PASV or PORT first.\n");
+    SendMessage("425 Use PASV or PORT first.\r\n");
     return;
   }
   FILE *file = fopen(arg,"w");
   if (file == NULL) {
-    SendMessage("551 Cannot open file.\n");
+    SendMessage("551 Cannot open file.\r\n");
     return;
   }
   int fd = fileno(file);
@@ -388,12 +388,12 @@ void Connection::FtpStor(const char* arg) {
     close(sock_pasv_);
     int pipefd[2];
     if (pipe(pipefd) == -1) {
-      SendMessage("451 Local error: cannot open pipe.\n");
+      SendMessage("451 Local error: cannot open pipe.\r\n");
       close(fd);
       close(data_connection);
       return;
     }
-    SendMessage("125 Data connection already open; transfer starting.\n");
+    SendMessage("125 Data connection already open; transfer starting.\r\n");
     int res = 1;
     const int buff_size = 8192;
     while ((res = splice(data_connection, 0, pipefd[1], NULL, buff_size, SPLICE_F_MORE | SPLICE_F_MOVE)) > 0) {
@@ -401,13 +401,13 @@ void Connection::FtpStor(const char* arg) {
     }
     /* Internal error */
     if(res == -1){
-      SendMessage("451 File send failed.\n");
+      SendMessage("451 File send failed.\r\n");
     }else{
-      SendMessage("226 File send OK.\n");
+      SendMessage("226 File send OK.\r\n");
     }
     close(data_connection);
   } else { 
-    SendMessage("550 Please use PASV instead of PORT.\n");
+    SendMessage("550 Please use PASV instead of PORT.\r\n");
   }
   mode_ = kNormal;
   close(fd);
@@ -419,15 +419,15 @@ void Connection::FtpStor(const char* arg) {
  */
 void Connection::FtpType(const char* arg) {
   if (!logged_in_) {
-    SendMessage("530 Please login with USER and PASS.\n");
+    SendMessage("530 Please login with USER and PASS.\r\n");
     return;
   }
   if (arg[0] == 'I') {
-    SendMessage("200 Switching to Binary mode.\n");
+    SendMessage("200 Switching to Binary mode.\r\n");
   } else if (arg[0] == 'A') {
-    SendMessage("200 Switching to ASCII mode.\n");
+    SendMessage("200 Switching to ASCII mode.\r\n");
   } else {
-    SendMessage("504 Command not implemented for that parameter.\n");
+    SendMessage("504 Command not implemented for that parameter.\r\n");
   }
 }
 
@@ -435,9 +435,9 @@ void Connection::FtpType(const char* arg) {
 void Connection::FtpUser(const char* arg) {
   if(strlen(arg) < 30){
     strcpy(username_, arg);
-    SendMessage("331 User name okay, need password\n");
+    SendMessage("331 User name okay, need password\r\n");
   }else{
-    SendMessage("530 Invalid username\n");
+    SendMessage("530 Invalid username\r\n");
   }
 }
 
