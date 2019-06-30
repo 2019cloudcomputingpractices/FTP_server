@@ -6,9 +6,9 @@ Lightweight FTP server written in C++ that supports high concurrency, authored b
 Quick start:
 ```
 make
-./ftp_server
+./ftp_server -p <port>
 ```
-Then Ftp Server will listen at 8021 port.
+Then Ftp Server will listen at 8021 port by default.
 
 ## Reference 
 
