@@ -1,4 +1,4 @@
-CXXFLAGS += -std=c++11 -I./include -pthread
+CXXFLAGS += -std=c++11 -I./include -pthread -pg
 DEPS = include/utils.h include/server.h include/connection.h
 
 ftp_server: utils.o server.o connection.o main.o

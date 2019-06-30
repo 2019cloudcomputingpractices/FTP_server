@@ -1,4 +1,5 @@
 #include "connection.h"
+#include "ftp.h"
 #include "utils.h"
 #include <unistd.h> 
 #include <dirent.h>
@@ -18,16 +19,18 @@ void GenPort(Port *port)
 }
 
 void Connection::Run() {
+  Print("Connection start running...\n");
 	SendMessage("220 Welcome to ftp service built by dafeng & shukui. \r\n");
 	char buffer[kBufferSize] = {0};
-
+  Print("send mes done\n");
 	while (status_ != kClosed) {
     int bytes_read = read(sock_, buffer, kBufferSize);
-    if (bytes_read == 0) {
+    if (bytes_read == 0 || bytes_read < 0) {
+      Print("[socket read error]bytes read: %d\n", bytes_read);
       break;
     }
 		if(bytes_read > kBufferSize) {
-			Print("Server read error :(");
+			Print("Server read error :(\n");
 			break;
 		}
     buffer[kBufferSize - 1] = '\0';
@@ -74,7 +77,12 @@ void Connection::Response(const Command& cmd) {
 }
 
 void Connection::SendMessage(const char* message) {
-  write(sock_, message, strlen(message));
+  int ret = write(sock_, message, strlen(message));
+  if (ret < 0) {
+    perror("[socket write error]\n");
+    exit(-1);
+  }
+  Print("%s\n", message);
 }
 
 /** 
@@ -239,7 +247,7 @@ void Connection::FtpPasv(const char* arg) {
     int ip[4];
 		GetIp(sock_,ip);
     Port port; 
-    GenPort(&port);
+    srv->GetPort(&port);
 
     /* Close previous passive socket */
     if (sock_pasv_ > 0) {
@@ -247,7 +255,12 @@ void Connection::FtpPasv(const char* arg) {
 		}
     /* Start listening here, but don't accept the connection */
     sock_pasv_ = CreateSocket(256 * port.p1 + port.p2);
-		char buff[255];
+    // 若端口被占用则重新分配
+    while(sock_pasv_ < 0) {
+      srv->GetPort(&port);
+      sock_pasv_ = CreateSocket(256 * port.p1 + port.p2);
+    }
+ 		char buff[255];
     sprintf(buff, "227 Entering Passive Mode (%d,%d,%d,%d,%d,%d)\r\n",
 						ip[0], ip[1], ip[2], ip[3], port.p1, port.p2);
     SendMessage(buff);

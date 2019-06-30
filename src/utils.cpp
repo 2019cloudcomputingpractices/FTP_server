@@ -6,6 +6,8 @@
 #include <cstring>
 #include <cstdarg>
 #include <mutex>
+#include <unistd.h>
+#include <ctime>
 #include "utils.h"
 
 std::mutex coutMutex;
@@ -38,11 +40,14 @@ int CreateSocket(int port)
   /* Bind socket to server address */
   if(bind(sock,(sockaddr*) &server_address, sizeof(server_address)) < 0) {
     std::lock_guard<std::mutex> lock(coutMutex);
-    fprintf(stderr, "Cannot bind socket to address");
-    exit(-1);
+    fprintf(stderr, "Cannot bind socket to address, port: %d", port);
+    close(sock);
+    //exit(-1);
+    return -1;
   }
 
-  listen(sock,5);
+  listen(sock,1024);
+  //listen(sock, 0);
   return sock;
 }
 
@@ -84,6 +89,11 @@ int Print(const char * fmt, ... ) {
     va_start(args, fmt);
     {
         std::lock_guard<std::mutex> lock(coutMutex);
+        // print prefix
+        time_t now = time(0);
+        tm *ltm = localtime(&now);
+        printf("%4d/%02d/%02d %02d:%02d:%02d ", ltm->tm_year, ltm->tm_mon, ltm->tm_mday, ltm->tm_hour, \
+        ltm->tm_min, ltm->tm_sec);
         res = vprintf(fmt, args);
     }
     va_end(args);
